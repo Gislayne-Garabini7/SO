@@ -22,14 +22,14 @@
 // Criando a estrutura de dados do sistema
 struct MyFile
 {
-    char filename[50];
-    size_t size;
-    time_t timestamp;
-    char *content;
+    char filename[50]; 
+    size_t size; 
+    time_t timestamp; 
+    char *content; 
 };
 
 struct MyFileSystem
-{
+{   // 
     struct MyFile files[100];
     int numFiles;
 };
@@ -38,7 +38,7 @@ struct MyFileSystem
 static struct MyFileSystem myFileSystem;
 
 // Funções de sistema de arquivos
-static int myfs_create(const char *MyFS, mode_t mode, struct fuse_file_info *fi)
+static int myfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 {
     (void)mode;
 
@@ -66,7 +66,7 @@ static int myfs_create(const char *MyFS, mode_t mode, struct fuse_file_info *fi)
     return 0;
 }
 
-static int myfs_write(const char *MyFS, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
+static int myfs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
     (void)fi;
 
