@@ -17,12 +17,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/types.h>
 #include <time.h>
 
 // Criando a estrutura de dados do sistema
 struct MyFile
 {
-    char filename[50]; 
+    char MyFS[50]; 
     size_t size; 
     time_t timestamp; 
     char *content; 
@@ -44,7 +45,7 @@ static int myfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 
     for (int n = 0; n < myFileSystem.numFiles; n++)
     {
-        if (strcmp(myFileSystem.files[n].filename, MyFS) == 0)
+        if (strcmp(myFileSystem.files[n].MyFS, path) == 0)
         {
             return -EEXIST;
         }
@@ -56,7 +57,7 @@ static int myfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     }
 
     struct MyFile newFile;
-    strcpy(newFile.filename, MyFS);
+    strcpy(newFile.MyFS, path);
     newFile.size = 0;
     newFile.timestamp = time(NULL);
     newFile.content = NULL;
@@ -74,7 +75,7 @@ static int myfs_write(const char *path, const char *buf, size_t size, off_t offs
 
     for (int i = 0; i < myFileSystem.numFiles; i++)
     {
-        if (strcmp(myFileSystem.files[i].filename, MyFS) == 0)
+        if (strcmp(myFileSystem.files[i].MyFS, path) == 0)
         {
             fileIndex = i;
             break;
@@ -105,10 +106,23 @@ static int myfs_write(const char *path, const char *buf, size_t size, off_t offs
 
 static int myfs_unlink(const char *path)
 {
-    // fazer o remo;ao
+   int fileIndex = find_file_index(path);
 
+    if (fileIndex == -1) {
+        return -ENOENT; 
+    }
 
-    return 0; 
+    // Libera a memória alocada para o conteúdo do arquivo
+    free(myFileSystem.files[fileIndex].content);
+
+    //Condição para remover o arquivo do sistema de arquivos
+    for (int i = fileIndex; i < myFileSystem.numFiles - 1; i++) {
+        myFileSystem.files[i] = myFileSystem.files[i + 1];
+    }
+
+    myFileSystem.numFiles--;
+
+    return 0;
 }
 
 // Definindo a estrutura fuse_operations
