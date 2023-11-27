@@ -120,7 +120,6 @@ static int myfs_write(const char *MyFS, const char *buf, size_t size, off_t offs
     return size;
 }
 
-// O QUE MUDOU? foi implementada
 // Remoção de arquivo
 static int myfs_unlink(const char *path)
 {
