@@ -1,4 +1,3 @@
-
 #define FUSE_USE_VERSION 31
 #define _FILE_OFFSET_BITS 64
 
@@ -18,8 +17,6 @@ struct MyFile {
     int isDirectory; 
 };
 
-// O QUE MUDOU? criacao da struct diretório; código antigo representava o fileSystem numa estrutura 
-// própria, mudei para ser representado por um diretório "raiz"
 
 // Estrutura de diretórios do sistema
 struct MyDirectory{
@@ -62,7 +59,6 @@ static int myfs_read(const char *path, char *buffer, size_t size, off_t offset, 
 }
 
 // Criação de arquivo
-// O QUE MUDOU? alterada a maneira que o arquivo é criada; o código anterior nao alocava espaço nem adicionava o arquivo na estrutura
 static int myfs_create(const char *MyFS, mode_t mode, struct fuse_file_info *fi)
 {
     (void)mode;
@@ -88,7 +84,6 @@ static int myfs_create(const char *MyFS, mode_t mode, struct fuse_file_info *fi)
     return 0;
 }
 
-// O QUE MUDOU? add comentários
 // Escrita em arquivo
 static int myfs_write(const char *MyFS, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
@@ -147,7 +142,6 @@ static int myfs_unlink(const char *path)
 }
 
 // Criação de diretório
-// O QUE MUDOU? Modo que o novo diretorio é criado
 static int myfs_mkdir(const char *path, mode_t mode) {
 
     // Verifica se o nome já está sendo utilizado
