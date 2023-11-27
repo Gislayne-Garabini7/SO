@@ -1,5 +1,5 @@
 all: myfs
 myfs: myfs.c
-    gcc -o myfs myfs.c -lfuse
+	gcc -o myfs myfs.c -lfuse
 clean:
-    rm -f myfs
+	rm -f myfs

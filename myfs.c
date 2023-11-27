@@ -1,3 +1,4 @@
+
 #define FUSE_USE_VERSION 31
 #define _FILE_OFFSET_BITS 64
 
@@ -7,6 +8,7 @@
 #include <string.h>
 #include <errno.h>
 #include <time.h>
+#include <unistd.h>
 
 // Estrutura de arquivos do sistema
 struct MyFile {
@@ -16,7 +18,6 @@ struct MyFile {
     time_t timestamp;
     int isDirectory; 
 };
-
 
 // Estrutura de diretórios do sistema
 struct MyDirectory{
@@ -59,6 +60,7 @@ static int myfs_read(const char *path, char *buffer, size_t size, off_t offset, 
 }
 
 // Criação de arquivo
+
 static int myfs_create(const char *MyFS, mode_t mode, struct fuse_file_info *fi)
 {
     (void)mode;
@@ -105,14 +107,19 @@ static int myfs_write(const char *MyFS, const char *buf, size_t size, off_t offs
     }
 
     // Verifica se o tamanho não suficiente
-    if (offset + size > diretorio_raiz.arquivos[fileIndex].size)
-    {
-        diretorio_raiz.arquivos[fileIndex].content = realloc(diretorio_raiz.arquivos[fileIndex].content, offset + size); // Realocação do espaço
-        if (diretorio_raiz.arquivos[fileIndex].content == NULL)
-        {
+    if (offset + size > 4096 || size > 4096 - offset) {
+        return -EFBIG; // Tamanho de arquivo excede os limites do sistema
+    }
+
+    // Realoca espaço se necessário
+    size_t new_size = offset + size;
+    if (new_size > diretorio_raiz.arquivos[fileIndex].size) {
+        char *new_content = realloc(diretorio_raiz.arquivos[fileIndex].content, new_size);
+        if (new_content == NULL) {
             return -ENOMEM; // Falha na alocação
         }
-        diretorio_raiz.arquivos[fileIndex].size = offset + size;
+        diretorio_raiz.arquivos[fileIndex].content = new_content;
+        diretorio_raiz.arquivos[fileIndex].size = new_size;
     }
 
     memcpy(diretorio_raiz.arquivos[fileIndex].content + offset, buf, size); // Copia os dados para o buffer
@@ -180,7 +187,7 @@ static int myfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off
     }
     // Exibindo diretórios
     for (int i = 0; i < diretorio_raiz.num_diretorios; i++) {
-        filler(buf, diretorio_raiz.num_diretorios[i].name, NULL, 0);
+        filler(buf, diretorio_raiz.diretorios[i]->name, NULL, 0);
     }
 
     return 0; 
@@ -201,6 +208,26 @@ static int myfs_getattr(const char *path, struct stat *stbuf) {
     }
 }
 
+static int myfs_open(const char *path, struct fuse_file_info *fi) {
+    return 0;
+}
+
+static int myfs_utimens(const char *path, const struct timespec ts[2]) {
+    // Procura o arquivo no diretório raiz
+    for (int i = 0; i < diretorio_raiz.num_arquivos; i++) {
+        if (strcmp(path + 1, diretorio_raiz.arquivos[i].name) == 0) {
+            // Atualiza os tempos de acesso e modificação do arquivo
+            diretorio_raiz.arquivos[i].timestamp = ts[0].tv_sec;
+            return 0;
+        }
+    }
+
+    // Retorna erro se o arquivo não foi encontrado
+    return -ENOENT;
+}
+
+
+
 // Definindo a estrutura fuse_operations
 
 static struct fuse_operations myfs_operations = {
@@ -210,8 +237,8 @@ static struct fuse_operations myfs_operations = {
     .create = myfs_create,
     .write = myfs_write,
     .utimens = myfs_utimens,
-    .open = myfs_open,  // Abre um arquivo
-    .unlink = myfs_unlink,  // Remove um arquivo
+    .open = myfs_open,  
+    .unlink = myfs_unlink, 
     .mkdir = myfs_mkdir,
 };
 
